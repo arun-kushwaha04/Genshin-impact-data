@@ -1,6 +1,10 @@
 const axios = require('axios');
+const path = require('path');
 const cheerio = require('cheerio');
 const pretty = require('pretty');
+const fs = require('fs');
+
+const { download } = require('./utils');
 
 const url = 'https://genshin.gg/weapons/';
 
@@ -23,8 +27,8 @@ async function scrapeData() {
     while (attribute.children && attribute.children.length > 0)
      attribute = attribute.children[0];
     if (j == 0) {
-     weapon.image_url = attribute.attribs.src;
      weapon.name = attribute.attribs.alt;
+     weapon.image_url = attribute.attribs.src;
     } else if (j == 1) {
      weapon.type = regexPattern.exec(attribute.attribs.src)[1].toUpperCase();
      weaponMapper[weapon.type] = attribute.attribs.src;
@@ -41,6 +45,21 @@ async function scrapeData() {
     }
    }
    weapons.push(weapon);
+   if (
+    !fs.existsSync(
+     path.join(
+      'WeaponImages',
+      weapon.type,
+      `${weapon.name.split(' ').join('_')}.png`,
+     ),
+    )
+   ) {
+    download(
+     weapon.image_url,
+     `${weapon.name.split(' ').join('_')}.png`,
+     path.join('WeaponImages', weapon.type),
+    );
+   }
   }
  } catch (error) {
   console.log(error);
