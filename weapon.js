@@ -47,9 +47,7 @@ async function scrapeData() {
      weapon.drop = attribute.data;
     }
    }
-   weapon.image_url = `https://raw.githubusercontent.com/arun-kushwaha04/Genshin-impact-data/main/WeaponImages/${
-    weapon.type
-   }/${weapon.name.split(' ').join('_')}.png`;
+
    if (
     !fs.existsSync(
      path.join(
@@ -66,8 +64,14 @@ async function scrapeData() {
      path.join('WeaponImages', weapon.type),
     );
    }
+   weapon.image_url = `https://raw.githubusercontent.com/arun-kushwaha04/Genshin-impact-data/main/WeaponImages/${
+    weapon.type
+   }/${weapon.name.split(' ').join('_')}.png`;
    weapon = new WeaponModel({ ...weapon, ...weapons[weapon.name] });
-   await weapon.save();
+   const data = await WeaponModel.findOne({ name: weapon.name });
+   if (!data) {
+    await weapon.save();
+   }
   }
  } catch (error) {
   console.log(error);
