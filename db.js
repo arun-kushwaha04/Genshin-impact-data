@@ -2,15 +2,25 @@ require('dotenv').config();
 const mongoose = require('mongoose');
 const DB_CONNECTION_STRING = process.env.MONGODB_CONNECTION_URL;
 
-mongoose.set({ strictQuery: false });
-mongoose.connect(`${DB_CONNECTION_STRING}`, {
- useNewUrlParser: true,
- useUnifiedTopology: true,
-});
+const connectDB = async () => {
+ return new Promise((resolve, reject) => {
+  mongoose.set('strictQuery', false);
+  mongoose
+   .connect(DB_CONNECTION_STRING, {
+    useNewUrlParser: true,
+    useUnifiedTopology: true,
+    dbName: 'data',
+   })
+   .then(() => {
+    console.log('db connected');
+    resolve();
+   })
+   .catch((err) => {
+    console.log(err);
+    reject(err);
+   });
+ });
+};
 
-const db = mongoose.connection;
-db.on('error', console.error.bind(console, 'Error connecting to database'));
-db.once('open', () => {
- console.log('Connected to database successfully');
- module.exports = db;
-});
+const conn = mongoose.connection;
+module.exports = { connectDB: connectDB, connection: conn };

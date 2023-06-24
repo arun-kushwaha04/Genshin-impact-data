@@ -12,8 +12,10 @@ const download = (uri, fileName, folderName) => {
    url: uri,
    responseType: 'stream',
   })
-   .then((response) => {
-    response.data.pipe(fs.createWriteStream(path.join(folderName, fileName)));
+   .then(async (response) => {
+    await response.data.pipe(
+     fs.createWriteStream(path.join(folderName, fileName)),
+    );
     resolve();
    })
    .catch((err) => {
