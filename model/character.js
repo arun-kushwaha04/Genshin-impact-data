@@ -7,6 +7,10 @@ const weaponBuildSchema = new Schema(
    type: Schema.Types.ObjectId,
    ref: 'Weapons',
   },
+  weaponLevel: {
+   type: 'String',
+   default: null,
+  },
   rank: {
    type: 'Number',
   },

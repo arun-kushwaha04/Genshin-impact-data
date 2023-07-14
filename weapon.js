@@ -7,7 +7,7 @@ const puppeteer = require('puppeteer');
 
 const { download } = require('./utils');
 const WeaponModel = require('./model/weapon');
-const db = require('./db');
+const { connectDB } = require('./db');
 
 const url = 'https://genshin.gg/weapons/';
 
@@ -16,6 +16,7 @@ const weaponMapper = {};
 
 async function scrapeData() {
  try {
+  await connectDB();
   const { data } = await axios.get(url);
   const $ = cheerio.load(data);
 

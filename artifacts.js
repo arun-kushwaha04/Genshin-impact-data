@@ -6,7 +6,7 @@ const fs = require('fs');
 const puppeteer = require('puppeteer');
 
 const { download } = require('./utils');
-const db = require('./db');
+const { connectDB } = require('./db');
 const ArtifactModel = require('./model/artifact');
 
 const url = 'https://genshin.gg/artifacts/';
@@ -16,6 +16,7 @@ const weaponMapper = {};
 
 async function scrapeData() {
  try {
+  await connectDB();
   const { data } = await axios.get(url);
   const $ = cheerio.load(data);
 
