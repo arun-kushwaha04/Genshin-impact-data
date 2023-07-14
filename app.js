@@ -9,6 +9,7 @@ const WeaponModel = require('./model/weapon');
 const ArtifactModel = require('./model/artifact');
 const MaterialModel = require('./model/material');
 const { download } = require('./utils');
+const CharacterModel = require('./model/character');
 
 const url = 'https://genshin.gg/characters/amber/';
 
@@ -204,7 +205,7 @@ async function scrapeData() {
     { name: weaponName },
     { _id: 1 },
    );
-   character_build.weapon_build.push({
+   character_build['weapon_build'].push({
     weaponId: weaponId.toString(),
     rank: i + 1,
    });
@@ -228,7 +229,7 @@ async function scrapeData() {
     );
     artifacts.push(artifactId2.toString());
    }
-   character_build.artifact_build.push({
+   character_build['artifact_build'].push({
     artifacts,
     value: artifacts.map(() => 4 / artifacts.length),
     rank: i + 1,
@@ -341,7 +342,8 @@ async function scrapeData() {
   characterJson.character_constellations = character_constellations;
   characterJson.character_ascension_cost = character_ascension_cost;
 
-  console.log(JSON.stringify(characterJson));
+  const character = new CharacterModel(characterJson);
+  await character.save();
 
   // process.exit(-1);
  } catch (error) {
