@@ -256,18 +256,6 @@ async function scrapeData() {
   const character_talent = [];
   const character_passives = [];
   const character_constellations = [];
-  // normal_attack: {
-  //   skill_name:""
-  //   skill_description:[]
-  // },
-  // elemental_skill: {
-  //   skill_name:""
-  //   skill_description:[]
-  // }
-  // elemental_brust: {
-  //   skill_name:""
-  //   skill_description:[]
-  // }
 
   let characterSkills = $('.character #talents').children(':not(h2)');
   await getSkills(characterSkills, character_talent, character_intro, 'Talent');
@@ -286,17 +274,75 @@ async function scrapeData() {
    'Constellation',
   );
 
+  const character_ascension_cost = [];
+  const ascension = $('.character #ascension').children(':not(h2)')[0];
+  const ascension_table = ascension.children[0].children[1];
+
+  for (let i = 0; i < ascension_table.children.length; i++) {
+   const row = {
+    rank: 0,
+    level: 0,
+    cost: 0,
+    materials: [],
+   };
+   for (
+    let j = 0;
+    j < ascension_table.children[i].children[0].children.length;
+    j++
+   ) {
+    const element = ascension_table.children[i].children[0].children[j];
+    if (j == 0) {
+     row.rank = parseInt(element.children[0].data);
+    } else if (j == 1) {
+     row.level = parseInt(element.children[0].data);
+    } else if (j == 2) {
+     row.cost = parseInt(element.children[0].data);
+    } else {
+     if (element.children.length === 0) {
+      row.materials.push(null);
+     } else {
+      const material = {
+       materialId: 'test',
+       count: 1,
+      };
+      const materialName = element.children[0].children[0].attribs.alt;
+      let image_url = element.children[0].children[0].attribs.src;
+
+      const dbMaterial = await MaterialModel.findOne({ name: materialName });
+      if (!fs.existsSync(path.join('MaterialImages', `${materialName}.png`)))
+       await download(image_url, materialName + '.png', 'MaterialImages');
+      if (!dbMaterial) {
+       image_url = `https://raw.githubusercontent.com/arun-kushwaha04/Genshin-impact-data/main/MaterialImages/${materialName}.png`;
+       const newMaterial = new MaterialModel({
+        name: materialName,
+        image_url: image_url,
+       });
+       await newMaterial.save();
+       material.materialId = newMaterial._id;
+      } else {
+       material.materialId = dbMaterial._id;
+      }
+      material.count = parseInt(
+       element.children[0].children[1].children[0].data,
+      );
+      row.materials.push(material);
+     }
+    }
+   }
+   character_ascension_cost.push(row);
+  }
+
   characterJson.character_intro = character_intro;
   characterJson.character_materials = character_materials;
   characterJson.character_build = character_build;
   characterJson.character_stats = character_stats;
   characterJson.character_talent = character_talent;
   characterJson.character_passives = character_passives;
+  characterJson.character_constellations = character_constellations;
+  characterJson.character_ascension_cost = character_ascension_cost;
 
-  console.log(character_constellations);
-  for (let i = 0; i < character_constellations.length; i++) {
-   console.log(character_constellations[i].description);
-  }
+  console.log(JSON.stringify(characterJson));
+
   // process.exit(-1);
  } catch (error) {
   console.log(error);
