@@ -66,7 +66,8 @@ async function scrapeData() {
    if (!fs.existsSync(path.join('MaterialImages', `${materialName}.png`)))
     await download(imageUrl, materialName + '.png', 'MaterialImages');
    if (!dbMaterial) {
-    imageUrl = `https://raw.githubusercontent.com/arun-kushwaha04/Genshin-impact-data/main/MaterialImages/${materialName}.png`;
+    //Agnidus%20Agate%20Sliver.png
+    https: imageUrl = `https://raw.githubusercontent.com/arun-kushwaha04/Genshin-impact-data/main/MaterialImages/${materialName}.png`;
     const newMaterial = new MaterialModel({
      name: materialName,
      image_url: imageUrl,
@@ -162,25 +163,96 @@ async function scrapeData() {
   //   skill_description:[]
   // }
 
-  const characterSkills = $('.character . character-skills').children(
-   ':not(h2)',
-  );
+  const characterSkills = $('.character #talents').children(':not(h2)');
   for (let i = 0; i < characterSkills.length; i++) {
    const skill = characterSkills[i];
    const skillTitle = skill.children[0].children[1].children[0].data;
-   const image_url = skill.children[0].children[0].attribs('src');
+   let image_url = skill.children[0].children[0].attribs.src;
    const skillName = skill.children[1].children[0].children[0].data;
-   const skillDescription = skill.children[1].children[1];
-  }
+   const skillDescription = skill.children[1].children[1].children;
+   const description = {};
 
-  console.log(character_talent);
+   let lastKey = null;
+   let data = '';
+
+   for (let i = 0; i < skillDescription.length; i++) {
+    const skill = skillDescription[i];
+    if (skill.name === 'h3') {
+     const val = skill.children[0].data;
+     description[val] = {};
+     lastKey = val;
+    } else if (skill.name === 'p') {
+     description[lastKey].type = 'text';
+     description[lastKey].value = [];
+     let lastData;
+     for (let i = 0; i < skill.children.length; i++) {
+      if ((skill.children[i].name = 'text')) {
+       lastData = skill.children[i].data;
+       i++;
+       while (i < skill.children.length && skill.children[i].name != 'br') {
+        if (skill.children[i].name === 'span') {
+         lastData += skill.children[i].children[0].data;
+        } else {
+         lastData += skill.children[i].data;
+        }
+        i++;
+       }
+       description[lastKey].value.push(lastData);
+      }
+     }
+    } else if (skill.name === 'ul') {
+     description[lastKey].type = 'list';
+     description[lastKey].value = [];
+     for (let i = 0; i < skill.children.length; i++) {
+      let data = '';
+      for (let j = 0; j < skill.children[i].children.length; j++) {
+       if (skill.children[i].children[j].data) {
+        data += skill.children[i].children[j].data;
+       } else if (skill.children[i].children[j].children[0]) {
+        data += skill.children[i].children[j].children[0].data;
+       }
+      }
+      description[lastKey].value.push(data);
+     }
+    } else {
+     if (!lastKey) {
+      if (skill.name === 'span') {
+       data += skill.children[0].data;
+      } else {
+       data += skill.data;
+      }
+     }
+    }
+   }
+   if (!lastKey) {
+    description.skillDescription = {};
+    description.skillDescription.type = 'text';
+    description.skillDescription.value = [data];
+   }
+
+   await download(
+    image_url,
+    skillName + '.png',
+    `Character/${character_intro.name}/Talent`,
+   );
+
+   image_url = `https://raw.githubusercontent.com/arun-kushwaha04/Genshin-impact-data/main/Character/${character_intro.name}/Talent/${skillName}.png`;
+
+   character_talent.push({
+    skillTitle,
+    image_url,
+    skillName,
+    description,
+   });
+  }
 
   characterJson.character_intro = character_intro;
   characterJson.character_materials = character_materials;
   characterJson.character_build = character_build;
   characterJson.character_stats = character_stats;
+  characterJson.character_talent = character_talent;
 
-  console.log(characterJson);
+  // console.log(character_talent);
   process.exit(-1);
  } catch (error) {
   console.log(error);
