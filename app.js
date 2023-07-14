@@ -1,10 +1,14 @@
 const axios = require('axios');
 const cheerio = require('cheerio');
 const pretty = require('pretty');
+const fs = require('fs');
+const path = require('path');
 
 const { connectDB } = require('./db');
 const WeaponModel = require('./model/weapon');
 const ArtifactModel = require('./model/artifact');
+const MaterialModel = require('./model/material');
+const { download } = require('./utils');
 
 const url = 'https://genshin.gg/characters/amber/';
 
@@ -56,10 +60,22 @@ async function scrapeData() {
   //a list of upgradable materials
   for (let i = 0; i < characterMaterials.length; i++) {
    const material = characterMaterials[i];
-   character_materials.push({
-    name: material.children[1].children[0].data,
-    image_url: material.children[0].attribs.src,
-   });
+   const materialName = material.children[1].children[0].data;
+   let imageUrl = material.children[0].attribs.src;
+   const dbMaterial = await MaterialModel.findOne({ name: materialName });
+   if (!fs.existsSync(path.join('MaterialImages', `${materialName}.png`)))
+    await download(imageUrl, materialName + '.png', 'MaterialImages');
+   if (!dbMaterial) {
+    imageUrl = `https://raw.githubusercontent.com/arun-kushwaha04/Genshin-impact-data/main/MaterialImages/${materialName}.png`;
+    const newMaterial = new MaterialModel({
+     name: materialName,
+     image_url: imageUrl,
+    });
+    await newMaterial.save();
+    character_materials.push(newMaterial._id);
+   } else {
+    character_materials.push(dbMaterial._id);
+   }
   }
 
   //character build
@@ -130,6 +146,35 @@ async function scrapeData() {
     statValue,
    });
   }
+
+  //getting character talents
+  const character_talent = [];
+  // normal_attack: {
+  //   skill_name:""
+  //   skill_description:[]
+  // },
+  // elemental_skill: {
+  //   skill_name:""
+  //   skill_description:[]
+  // }
+  // elemental_brust: {
+  //   skill_name:""
+  //   skill_description:[]
+  // }
+
+  const characterSkills = $('.character . character-skills').children(
+   ':not(h2)',
+  );
+  for (let i = 0; i < characterSkills.length; i++) {
+   const skill = characterSkills[i];
+   const skillTitle = skill.children[0].children[1].children[0].data;
+   const image_url = skill.children[0].children[0].attribs('src');
+   const skillName = skill.children[1].children[0].children[0].data;
+   const skillDescription = skill.children[1].children[1];
+  }
+
+  console.log(character_talent);
+
   characterJson.character_intro = character_intro;
   characterJson.character_materials = character_materials;
   characterJson.character_build = character_build;
